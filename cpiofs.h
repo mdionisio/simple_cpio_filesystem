@@ -27,10 +27,10 @@ DEF_GETTER32(filesize);
 #undef DEF_GETTER16
 #undef DEF_GETTER32
 
-int cpio_valid(const struct header_old_cpio* d, long dsize);
+int cpio_valid(const struct header_old_cpio* d, unsigned long dsize);
 
 const struct header_old_cpio* cpio_init_iter(const void *d, long dsize);
-const struct header_old_cpio* cpio_goto_next(const struct header_old_cpio* d, long *pdsize);
+const struct header_old_cpio* cpio_goto_next(const struct header_old_cpio* d, unsigned long *pdsize);
 
 const char* get_filename(const struct header_old_cpio* d, uint16_t *len);
 
@@ -62,6 +62,7 @@ enum cpio_error {
     CPIO_ERR_NEXIST      = -1,   // File NOT EXISTS
     CPIO_ERR_SEEK_OUT    = -2,   // seek command is out of the file
     CPIO_ERR_PARAM       = -3,   // parameter error
+    CPIO_ERR_UNKNOWN     = -4,   // general error
 };
 
 typedef uint32_t cpio_size_t;

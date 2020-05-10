@@ -77,11 +77,11 @@ const char* get_filename(const struct header_old_cpio* data, uint16_t *len) {
     return ret;
 }
 
-int cpio_valid(const struct header_old_cpio* d, long dsize) {
+int cpio_valid(const struct header_old_cpio* d, unsigned long dsize) {
     if ((d != NULL) && (dsize > sizeof(struct header_old_cpio))) {
         dsize -= sizeof(struct header_old_cpio);
         uint16_t namelen = cpio_get_namesize(d);
-        if (namelen % 2 == 1) {
+        if (namelen % 2U == 1U) {
             namelen ++;
         }
         if (dsize >= namelen) {
@@ -111,14 +111,14 @@ const struct header_old_cpio* cpio_init_iter(const void *d, long dsize) {
     return NULL;
 }
 
-const struct header_old_cpio* cpio_goto_next(const struct header_old_cpio* d, long *pdsize) {
-    long dsize = *pdsize;
+const struct header_old_cpio* cpio_goto_next(const struct header_old_cpio* d, unsigned long *pdsize) {
+    unsigned long dsize = *pdsize;
     const uint8_t *dnext = (uint8_t *)d;
     if (dsize > sizeof(struct header_old_cpio)) {
         dsize -= sizeof(struct header_old_cpio);
         dnext += sizeof(struct header_old_cpio);
         uint16_t namelen = cpio_get_namesize(d);
-        if (namelen % 2 == 1) {
+        if (namelen % 2U == 1U) {
             namelen ++;
         }
         if (dsize >= namelen) {
@@ -126,7 +126,7 @@ const struct header_old_cpio* cpio_goto_next(const struct header_old_cpio* d, lo
             dnext += namelen;
 
             uint32_t datalen = cpio_get_filesize(d);
-            if (datalen % 2 == 1) {
+            if (datalen % 2U == 1U) {
                 datalen ++;
             }
             if (dsize >= datalen) {
@@ -162,13 +162,13 @@ const uint8_t* get_filedata(const struct header_old_cpio* d, uint32_t *len) {
 /* ** */
 typedef int (*strncmp_t) (const char *s1, const char *s2, size_t n);
 
-static const struct header_old_cpio* cpiofs_find(const cpiofs_t *fs, const char *path, uint16_t mask, strncmp_t cmp, long *pdsize) {
+static const struct header_old_cpio* cpiofs_find(const cpiofs_t *fs, const char *path, uint16_t mask, strncmp_t cmp, unsigned long *pdsize) {
     if ((path[0] == '.') && (path[1] == '/')) {
         path += 2;
     } else if (path[0] == '/') {
         path += 1;
     }
-    long fsize = fs->size;
+    unsigned long fsize = fs->size;
     for (const struct header_old_cpio* pdata = cpio_init_iter(fs->head, fsize); 
          pdata != NULL; 
          pdata = cpio_goto_next(pdata, &fsize)) {
@@ -248,12 +248,13 @@ int cpiofs_file_close(cpio_file_t *file) {
 
 cpio_ssize_t cpiofs_file_read(cpio_file_t *file, void *buffer, cpio_size_t size) {
     if (file->head != NULL) {
-        cpio_ssize_t data_read = 0;
         if (size > 0) {
             uint32_t fsize;
             const uint8_t* data = get_filedata(file->head, &fsize);
-            // todo assert file->pos > fsize
-            data_read = fsize - file->pos;
+            if (file->pos > fsize) {
+                return CPIO_ERR_UNKNOWN;
+            }
+            cpio_size_t data_read = fsize - file->pos;
             if (size < data_read) {
                 data_read = size;
             }
@@ -276,7 +277,7 @@ cpio_soff_t cpiofs_file_seek(cpio_file_t *file, cpio_soff_t off, cpio_whence_fla
                 off += (cpio_soff_t)file->pos;
                 __attribute__ ((fallthrough));
             case CPIO_SEEK_SET:
-                if ((off >= 0) && (off <= fsize)) {
+                if ((off >= 0) && ((cpio_off_t)off <= fsize)) {
                     file->pos = (cpio_off_t)off;
                     return file->pos;
                 } else {
@@ -347,7 +348,7 @@ int cpiofs_dir_read(cpio_dir_t *dir, cpio_info_t *info) {
             .size = dir->size,
             .resource_count = 0,
         };
-        long dsize = 0;
+        unsigned long dsize = 0;
         const struct header_old_cpio* pdata = cpiofs_find(&cpiofs, get_filename(dir->head, NULL), CPIO_FILEDIR_TYPE, nprefix_nosub, &dsize);
         if (pdata == dir->head) {
             pdata = cpio_goto_next(pdata, &dsize);

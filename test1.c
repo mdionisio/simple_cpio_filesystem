@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
         goto end;
     }
 
-    if (fread(data, 1, fsize, fp) != fsize) {
+    if (fread(data, 1, fsize, fp) != (size_t)fsize) {
         result = -4;
         fprintf(stderr, "impossible to read all data from: %s\n", argv[1]);
         goto end;
@@ -235,12 +235,15 @@ int main(int argc, char** argv) {
         .resource_count = 0,
     };
 
-#if 0
-    for (const struct header_old_cpio* pdata = cpio_init_iter(data, fsize); 
-         pdata != NULL; 
-         pdata = cpio_goto_next(pdata, &fsize)) {
-        print_file(pdata, fsize);
-        printf("\n+++++++++++++++++++\n");
+#if 1
+    {
+        unsigned long ufsize = (unsigned long)fsize;
+        for (const struct header_old_cpio* pdata = cpio_init_iter(data, ufsize); 
+            pdata != NULL; 
+            pdata = cpio_goto_next(pdata, &ufsize)) {
+            print_file(pdata, ufsize);
+            printf("\n+++++++++++++++++++\n");
+        }
     }
 #endif
 
