@@ -271,8 +271,10 @@ cpio_soff_t cpiofs_file_seek(cpio_file_t *file, cpio_soff_t off, cpio_whence_fla
         switch (whence) {
             case CPIO_SEEK_END:
                 file->pos = (cpio_off_t)fsize;
+                __attribute__ ((fallthrough));
             case CPIO_SEEK_CUR:
                 off += (cpio_soff_t)file->pos;
+                __attribute__ ((fallthrough));
             case CPIO_SEEK_SET:
                 if ((off >= 0) && (off <= fsize)) {
                     file->pos = (cpio_off_t)off;
